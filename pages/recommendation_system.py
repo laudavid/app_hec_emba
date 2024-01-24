@@ -23,7 +23,7 @@ Recommender systems are built using two different techniques. The first is **Con
 The second is **Collaborative Filtering** where recommendations are made based on the preferences and behavior of similar users.""")
 
             
-st.markdown("""Here is an example of Content-based filtering versus Collaborative filtering.""")
+st.markdown("""Here is an example of **Content-based filtering versus Collaborative filtering** for movie recommendations.""")
 st.markdown(" ")
 
 st.image("images/rs.png", width=800)
@@ -91,7 +91,7 @@ st.markdown("  ")
 st.markdown("""### Movie Recommendation System 📽️""")
 #st.image("images/movies.jpg")
 st.markdown("""This example showcases the use of a Recommender System for **movies recommendations** using The Movie Data Base (TMDB). <br>
-            The recommen
+            The recommender systems uses **Collaborative filtering**, which means it doesn't take into account genre when recommending a movie. <br>
 For more info on TMDB, visit https://www.themoviedb.org/ """, unsafe_allow_html=True)
 st.markdown(" ")
 
