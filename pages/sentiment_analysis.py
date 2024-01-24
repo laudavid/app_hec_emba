@@ -149,7 +149,7 @@ with tab1_:
         
         with tab1: # Overall results (tab_1)
             # get results df
-            df_results_tab1 = df_results[["Customer ID","Review","Rating","Negative","Neutral","Positive","Result"]]
+            df_results_tab1 = df_results[["ID","Review","Rating","Negative","Neutral","Positive","Result"]]
 
             # warning message
             df_warning = df_results_tab1["Result"].value_counts().to_frame().reset_index()
