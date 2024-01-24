@@ -191,7 +191,7 @@ show_pages(
         Page("pages/timeseries_analysis.py", "Time Series Forecasting", "📈"),
         Page("pages/sentiment_analysis.py", "Sentiment Analysis", "🤔"),
         #Page("pages/image_classification.py", "Image classification", ":camera:"),
-        Page("pages/object_detection.py", "Object Detection", "📹"),
+        #Page("pages/object_detection.py", "Object Detection", "📹"), #need to reduce RAM costs
         Page("pages/recommendation_system.py", "Recommendation system", "🛒")
     ]
 )
