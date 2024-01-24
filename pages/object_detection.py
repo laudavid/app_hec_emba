@@ -12,6 +12,10 @@ from torchvision.transforms import ToTensor, ToPILImage
 
 st.set_page_config(layout="wide")
 
+def rgb_to_hex(rgb):
+    """Converts an RGB tuple to an HTML-style Hex string."""
+    hex_color = "#{:02x}{:02x}{:02x}".format(int(rgb[0] * 255), int(rgb[1] * 255), int(rgb[2] * 255))
+    return hex_color
 
 ## CODE TO CLEAN IMAGES
 def fix_channels(t):
@@ -50,26 +54,32 @@ def plot_results(pil_img, prob, boxes):
     fig = plt.figure(figsize=(16,10))
     plt.imshow(pil_img)
     ax = plt.gca()
+    
     colors = COLORS * 100
+    colors_used = []
+
     for p, (xmin, ymin, xmax, ymax), c in zip(prob, boxes.tolist(), colors):
         cl = p.argmax()
+        p_max = p.max().detach().numpy()
         if idx_to_text(cl) is False:
             pass
-        else:
+            
+        else:    
+            colors_used.append(rgb_to_hex(c))
             ax.add_patch(plt.Rectangle((xmin, ymin), xmax - xmin, ymax - ymin,
                                     fill=False, color=c, linewidth=3))
-            ax.text(xmin, ymin, idx_to_text(cl), fontsize=10,
+            ax.text(xmin, ymin, f"{idx_to_text(cl)}", fontsize=10,
                     bbox=dict(facecolor=c, alpha=0.8))
+            
     plt.axis('off')
     
     plt.savefig("results_od.png", 
             bbox_inches ="tight") 
-    plt.show()
-
+    #plt.show()
     st.image("results_od.png")
-    
-    # print matplotlib plot to streamlit
-    #st.pyplot(fig)
+
+    return colors_used
+
 
 def return_probas(outputs, threshold):
     probas = outputs.logits.softmax(-1)[0, :, :-1]
@@ -77,6 +87,7 @@ def return_probas(outputs, threshold):
     keep = probas.max(-1).values > threshold
 
     return probas, keep
+
 
 
 # def visualize_predictions(image, outputs, threshold):
@@ -96,12 +107,19 @@ def visualize_probas(probas, threshold, colors):
     
     cats_dict = dict(zip(np.arange(0,len(cats)),cats))
     label_df["label"] = label_df["label"].map(cats_dict)
-    top_label_df = label_df.loc[label_df["proba"]>threshold].groupby("label").mean().sort_values(by=["proba"], ascending=False).round(2).reset_index()
+    top_label_df = label_df.loc[label_df["proba"]>threshold].round(2)
+    top_label_df["colors"] = colors
+    top_label_df.sort_values(by=["proba"], ascending=False, inplace=True)
 
-    chart = alt.Chart(top_label_df).mark_bar().encode(x="proba", y="label", color=colors).interactive()
-    st.altair_chart(chart)
+    st.dataframe(top_label_df.drop(columns=["colors"]))
+    
+    mode_func = lambda x: x.mode().iloc[0]
+    top_label_df_agg = top_label_df.groupby("label").agg({"proba":"mean", "colors":mode_func})
+    top_label_df_agg = top_label_df_agg.reset_index().sort_values(by=["proba"], ascending=False)
 
-
+    chart = alt.Chart(top_label_df_agg).mark_bar().encode(x="proba", y="label", 
+                                                          color=alt.Color('colors:N', scale=None)).interactive()
+    #st.altair_chart(chart)
 
 
 
@@ -133,12 +151,12 @@ st.markdown("""Common applications of Object Detection include:
 
 
 st.markdown("  ")
-st.markdown("  ")
+st.divider()
 
-st.markdown("### Fashion use case")
-st.markdown("""For this use case, an Object detection model was built to detect clothing in images. 
-            The user is able to choose which image he wants to use for the detection, what types of clothings should be detected and what threshold to set for the model.<br> 
- """, unsafe_allow_html=True)
+st.markdown("### Fashion object detection 👗")
+st.markdown(""" The following example showcases the use of an **Object detection algorithm** for clothing items/features on fashion images. <br>
+            This use case can be seen as an application of AI models for Fashion and E-commerce. <br>
+            """, unsafe_allow_html=True)
 
 st.image("images/od_fashion.jpg", width=700)
 
@@ -175,8 +193,8 @@ elif select_image_box == "Load your own image":
     image_ = st.file_uploader("Load an image here", 
                                 key="OD_dior", type=['jpg','jpeg','png'], label_visibility="collapsed")
     
-    st.warning("""**Note**: The model tends to perform better with images of people facing forward. 
-           Choose this type of image if you optimal results.""")
+    st.warning("""**Note**: The model tends to perform better with images of people/clothing items facing forward. 
+           Choose this type of image if you want optimal results.""")
 
     if image_ is not None:
         st.image(Image.open(image_), width=300)
@@ -220,9 +238,15 @@ st.markdown("  ")
 
 st.markdown("#### Step 3: Select a threshold")
 
-threshold = st.slider('**Select a threshold**', 0.0, 1.0, 0.05, label_visibility="collapsed")
-st.warning("""**Note**: The threshold helps you decide how confident you want your model to be with its predictions. 
-        Elements that were identified with a lower probability than the given threshold will be ignored in the final results. """)
+st.markdown("""Finally, select a threshold for the model. 
+            The threshold helps you decide how confident you want your model to be with its predictions. 
+            Elements that were identified with a lower probability than the given threshold will be ignored in the final results.""")
+
+threshold = st.slider('**Select a threshold**', min_value=0.0, step=0.05, max_value=1.0, value=0.75, label_visibility="collapsed")
+# min_value=0.000000, step=0.000001, max_value=0.0005, value=0.0000045, format="%f"
+
+if threshold < 0.6:
+    st.warning("""**Warning**: Selecting a low threshold (below 0.6) could lead the model to make errors and detect too many objects.""")
 
 st.write("You've selected a threshold at", threshold)
 
@@ -238,7 +262,6 @@ if run_model:
     if image_ != None and selected_options != None and threshold!= None:
         with st.spinner('Wait for it...'):
             ## SELECT IMAGE
-            #folder_path = r"data/dior_show"
             image = Image.open(image_)
             image = fix_channels(ToTensor()(image))
 
@@ -255,11 +278,12 @@ if run_model:
             # PLOT BOUNDING BOX AND BARS/PROBA
             col1, col2 = st.columns(2)
             with col1:
+                st.markdown("##### Bounding box results")
                 bboxes_scaled = rescale_bboxes(outputs.pred_boxes[0, keep].cpu(), image.size)
-                plot_results(image, probas[keep], bboxes_scaled)
+                colors_used = plot_results(image, probas[keep], bboxes_scaled)
             
             with col2: 
-                visualize_probas(probas, threshold, COLORS)
+                visualize_probas(probas, threshold, colors_used)
             
             st.info("Done")
 

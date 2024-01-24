@@ -2,10 +2,10 @@
 Github Repository for the Streamlit HEC EMBA Introduction to Data Science app. 
 
 Deploy the app locally using 
-`streamlit run model.py`.
+`streamlit run main_page.py`.
 
 The app currently has four use cases:
-- Time Series Forecasting of S&P 500 volatility 
+- Time Series Forecasting on Electrical Power Consumption 
+- Sentiment Analysis on Customer reviews
 - Object detection on Fashion images
-- Sentiment Analysis on US Congressional Hearing
-- Recommendation system 
+- Recommendation system for movies
