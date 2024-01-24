@@ -101,17 +101,9 @@ st.markdown(" ")
 
 colors = ["#8ef", "#faa", "#afa", "#fea", "#8ef","#afa"]
 
-# select_image_box = st.radio("",
-#         ["Select a movie", "Select a number of movies to recommend"],
-#         index=None, label_visibility="collapsed")
-
-#     if select_image_box == "Filter by Date (Year)":
-#         selected_movie = st.selectbox("**Select a movie**", movies["title"].values[:-3])
-
-#     if select_image_box == "":
 
 selected_movie = st.selectbox("**Select a movie**", movies["title"].values[:-3])
-selected_nb_movies = st.selectbox("**Select a number of movies to recommend**", np.arange(2,7))
+selected_nb_movies = st.selectbox("**Select a number of movies to recommend**", np.arange(2,7), index=3)
 
 c1, c2 = st.columns([0.7,0.3], gap="medium")
 with c1:
